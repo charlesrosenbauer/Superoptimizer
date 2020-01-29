@@ -73,6 +73,21 @@ typedef struct{
 }PROGRAM;
 
 
+void printU8 (uint8_t x){
+  for(int i = 0; i < 8; i++){
+    printf((x & (1l << i))? "#" : " ");
+  }
+  printf("\n");
+}
+
+void printU64(uint8_t x){
+  for(int i = 0; i < 64; i++){
+    printf((x & (1l << i))? "#" : " ");
+  }
+  printf("\n");
+}
+
+
 
 uint64_t getDependencyMap(OPCODETABLE* table, PROGRAM* p){
   uint64_t ret = 0;
@@ -100,23 +115,100 @@ uint64_t getDependencyMap(OPCODETABLE* table, PROGRAM* p){
     }
 
     int a, b, c;
-    a = 8 + (i - p->ops[i].a);
-    b = 8 + (i - p->ops[i].b);
-    c = 8 + (i - p->ops[i].c);
+    a = p->inct + (i - p->ops[i].a);
+    b = p->inct + (i - p->ops[i].b);
+    c = p->inct + (i - p->ops[i].c);
 
     if(unop){
-      depmap[i+8] = depmap[a];
+      depmap[i+p->inct] = depmap[a];
     }else if(binop){
-      depmap[i+8] = depmap[a] | depmap[b];
+      depmap[i+p->inct] = depmap[a] | depmap[b];
     }else if(trinop){
-      depmap[i+8] = depmap[a] | depmap[b] | depmap[c];
+      depmap[i+p->inct] = depmap[a] | depmap[b] | depmap[c];
     }
   }
 
   for(int i = 0; i < p->exct; i++){
-    ret |= (depmap[p->exs[i]+8] << (8 * i));
+    ret |= (depmap[p->exs[i]+p->inct] << (8 * i));
   }
 
+  return ret;
+}
+
+
+/*
+  Ideally, there would be different tables for different platforms, but that
+  isn't much of a factor for this prototype.
+*/
+OPCODETABLE makeOpcodeTable(){
+  OPCODETABLE ret;
+  ret.isDefined[0] = 0b0000000000000000000000000011111111111111111111111111111111111110;
+  ret.isDefined[1] = 0;
+  ret.isDefined[2] = 0;
+  ret.isDefined[3] = 0;
+
+  ret.isUnop   [0] = 0b0000000000000000000000000011100000000000001110000100011000000000;
+  ret.isUnop   [1] = 0;
+  ret.isUnop   [2] = 0;
+  ret.isUnop   [3] = 0;
+
+  ret.isBinop  [0] = 0b0000000000000000000000000000011111111111110001111011100111100110;
+  ret.isBinop  [1] = 0;
+  ret.isBinop  [2] = 0;
+  ret.isBinop  [3] = 0;
+
+  ret.isTrinop [0] = 0b0000000000000000000000000000000000000000000000000000000000011000;
+  ret.isTrinop [1] = 0;
+  ret.isTrinop [2] = 0;
+  ret.isTrinop [3] = 0;
+
+  uint64_t cost_1 =  0b0000000000000000000000000011111111111111000111111111100000011110;
+  uint64_t cost_3 =  0b0000000000000000000000000000000000000000111000000000000001100000;
+  uint64_t cost_22=  0b0000000000000000000000000000000000000000000000000000000110000000;
+  for(int i = 0; i < 256; i++){
+    if(i < 64){
+      if      (cost_1  & (1l << i)){
+        ret.cost[i] =  1;
+      }else if(cost_3  & (1l << i)){
+        ret.cost[i] =  3;
+      }else if(cost_22 & (1l << i)){
+        ret.cost[i] = 22;
+      }else{
+        ret.cost[i] = 0;
+      }
+    }else{
+      ret.cost[i] = 0;
+    }
+    ret.reqOpc[i] = 0;
+  }
+  ret.reqOpc[IMOD] = IDIV;
+  ret.reqOpc[UMOD] = UDIV;
+
+  return ret;
+}
+
+
+OPCODE newUnop(OPCODES op, int a){
+  OPCODE ret;
+  ret.op = op;
+  ret.a  = a;
+  return ret;
+}
+
+OPCODE newBinop(OPCODES op, int a, int b){
+  OPCODE ret;
+  ret.op = op;
+  ret.a  = a;
+  ret.b  = b;
+  return ret;
+}
+
+OPCODE newTrinop(OPCODES op, int a, int b, int c){
+  OPCODE ret;
+  ret.op = op;
+  ret.a  = a;
+  ret.b  = b;
+  ret.c  = c;
   return ret;
 }
 
@@ -125,5 +217,26 @@ uint64_t getDependencyMap(OPCODETABLE* table, PROGRAM* p){
 
 
 int main(){
+
+  PROGRAM p;
+  OPCODETABLE tab = makeOpcodeTable();
+
+  p.ops[0] = newUnop (PCT , 4);
+  p.ops[1] = newBinop(ADD , 4, 5);
+  p.ops[2] = newBinop(ADD , 1, 4);
+  p.ops[3] = newBinop(IMUL, 4, 6);
+  p.inct   = 4;
+  p.exct   = 4;
+  p.exs[0] = 0;
+  p.exs[1] = 1;
+  p.exs[2] = 2;
+  p.exs[3] = 3;
+  p.size   = 4;
+
+  uint64_t depmap = getDependencyMap(&tab, &p);
+  for(int i = 0; i < 64; i++){
+    printf((depmap & (1l << i))? "#" : " ");
+  }
+  printf("\n");
 
 }
