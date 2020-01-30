@@ -1,6 +1,7 @@
 #include "stdint.h"
 #include "stdio.h"
 #include "opcodes.h"
+#include "util.h"
 
 
 
@@ -26,9 +27,6 @@ int main(){
   p.size   = 4;
 
   uint64_t depmap = getDependencyMap(&tab, &p);
-  for(int i = 0; i < 64; i++){
-    printf((depmap & (1l << i))? "#" : " ");
-  }
-  printf("\n");
+  printU64(depmap);
 
 }
