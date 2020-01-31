@@ -1,5 +1,5 @@
 #ifndef __INTERPRETER_HEADER__
-#endif  __INTERPRETER_HEADER__
+#define __INTERPRETER_HEADER__
 
 
 #include "opcodes.h"
