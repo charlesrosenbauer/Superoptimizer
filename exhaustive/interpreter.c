@@ -38,167 +38,234 @@ int step(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, int ix){
   switch(op){
     case ADD : {
       for(int i = 0; i < tests->tests; i++){
-        q[i].I64 = a[i].I64 + b[i].I64;
+        __int128 ax, bx;
+        ax = a[i].val.I64;
+        bx = b[i].val.I64;
+        ax += bx;
+        q[i].val.I64  = (int64_t) ax;
+        q[i].sidedata = (int64_t)(ax >> 64) != 0;
+        q[i].metadata = 1;
       }
     }break;
 
     case SUB : {
       for(int i = 0; i < tests->tests; i++){
-        q[i].I64 = a[i].I64 - b[i].I64;
+        __int128 ax, bx;
+        ax = a[i].val.I64;
+        bx = b[i].val.I64;
+        ax -= bx;
+        q[i].val.I64  = (int64_t) ax;
+        q[i].sidedata = (int64_t)(ax >> 64) != 0;
+        q[i].metadata = 1;
       }
     }break;
 
     case ADC : {
       // TODO: Needs to account for carry bit
       for(int i = 0; i < tests->tests; i++){
-        q[i].I64 = a[i].I64 + b[i].I64;
+        __int128 ax, bx;
+        ax = a[i].val.I64;
+        bx = b[i].val.I64;
+        ax += bx + c[i].sidedata;
+        q[i].val.I64  = (int64_t)ax;
+        q[i].sidedata = (int64_t)(ax >> 64) != 0;
+        q[i].metadata = 1;
       }
     }break;
 
     case SBC : {
       // TODO: Needs to account for carry bit
       for(int i = 0; i < tests->tests; i++){
-        q[i].I64 = a[i].I64 + b[i].I64;
+        __int128 ax, bx;
+        ax = a[i].val.I64;
+        bx = b[i].val.I64;
+        ax = ax - bx - c[i].sidedata;
+        q[i].val.I64  = (int64_t) ax;
+        q[i].sidedata = (int64_t)(ax >> 64) != 0;
+        q[i].metadata = 1;
       }
     }break;
 
     case IMUL: {
       for(int i = 0; i < tests->tests; i++){
-        q[i].I64 = a[i].I64 * b[i].I64;
+        __int128 ax, bx;
+        ax = a[i].val.I64;
+        bx = b[i].val.I64;
+        ax *= bx;
+        q[i].val.I64  = (int64_t) ax;
+        q[i].sidedata = (int64_t)(ax >> 65) != 0;   // Probably not quite right
+        q[i].metadata = 1;
       }
     }break;
 
     case UMUL: {
       for(int i = 0; i < tests->tests; i++){
-        q[i].U64 = a[i].U64 * b[i].U64;
+        __int128 ax, bx;
+        uint64_t am, bm;
+        ax = am = a[i].val.U64;
+        bx = bm = b[i].val.U64;
+        am *= bm;
+        ax *= bx;
+        q[i].val.U64  = (uint64_t) am;
+        q[i].sidedata = (int64_t)(ax >> 65) != 0;   // Probably not quite right
+        q[i].metadata = 1;
       }
     }break;
 
     case IDIV: {
-      // TODO: Needs to account for zeroes
       for(int i = 0; i < tests->tests; i++){
-        q[i].I64 = a[i].I64 / b[i].I64;
+        if(b[i].val.I64 == 0){
+          q[i].val.I64  = 0;
+          q[i].metadata = 0;
+        }else{
+          q[i].val.I64  = a[i].val.I64 / b[i].val.I64;
+          q[i].metadata = 1;
+        }
       }
     }break;
 
     case UDIV: {
-      // TODO: Needs to account for zeroes
       for(int i = 0; i < tests->tests; i++){
-        q[i].U64 = a[i].U64 / b[i].U64;
+        if(b[i].val.U64 == 0){
+          q[i].val.U64  = 0;
+          q[i].metadata = 0;
+        }else{
+          q[i].val.U64  = a[i].val.U64 / b[i].val.U64;
+          q[i].metadata = 1;
+        }
       }
     }break;
 
     case XOR : {
       for(int i = 0; i < tests->tests; i++){
-        q[i].U64 = a[i].U64 ^ b[i].U64;
+        q[i].val.U64 = a[i].val.U64 ^ b[i].val.U64;
+        q[i].metadata = 1;
       }
     }break;
 
     case AND : {
       for(int i = 0; i < tests->tests; i++){
-        q[i].U64 = a[i].U64 & b[i].U64;
+        q[i].val.U64 = a[i].val.U64 & b[i].val.U64;
+        q[i].metadata = 1;
       }
     }break;
 
     case OR  : {
       for(int i = 0; i < tests->tests; i++){
-        q[i].U64 = a[i].U64 | b[i].U64;
+        q[i].val.U64 = a[i].val.U64 | b[i].val.U64;
+        q[i].metadata = 1;
       }
     }break;
 
     case NOT : {
       for(int i = 0; i < tests->tests; i++){
-        q[i].U64 = ~a[i].U64;
+        q[i].val.U64 = ~a[i].val.U64;
+        q[i].metadata = 1;
       }
     }break;
 
     case SHL : {
       for(int i = 0; i < tests->tests; i++){
-        q[i].U64 = a[i].U64 << b[i].U64;
+        q[i].val.U64 = a[i].val.U64 << b[i].val.U64;
+        q[i].metadata = 1;
       }
     }break;
 
     case SHR : {
       for(int i = 0; i < tests->tests; i++){
-        q[i].U64 = a[i].U64 >> b[i].U64;
+        q[i].val.U64 = a[i].val.U64 >> b[i].val.U64;
+        q[i].metadata = 1;
       }
     }break;
 
     case RTL : {
       for(int i = 0; i < tests->tests; i++){
-        q[i].U64 = (a[i].U64 << b[i].U64) | (a[i].U64 >> (64 - b[i].U64));
+        q[i].val.U64 = (a[i].val.U64 << b[i].val.U64) | (a[i].val.U64 >> (64 - b[i].val.U64));
+        q[i].metadata = 1;
       }
     }break;
 
     case RTR : {
       for(int i = 0; i < tests->tests; i++){
-        q[i].U64 = (a[i].U64 >> b[i].U64) | (a[i].U64 << (64 - b[i].U64));
+        q[i].val.U64 = (a[i].val.U64 >> b[i].val.U64) | (a[i].val.U64 << (64 - b[i].val.U64));
+        q[i].metadata = 1;
       }
     }break;
 
     case PCT : {
       for(int i = 0; i < tests->tests; i++){
-        q[i].U64 = __builtin_popcountl(a[i].U64);
+        q[i].val.U64 = __builtin_popcountl(a[i].val.U64);
+        q[i].metadata = 1;
       }
     }break;
 
     case CTZ : {
       for(int i = 0; i < tests->tests; i++){
-        q[i].U64 = __builtin_ctz(a[i].U64);
+        q[i].val.U64 = __builtin_ctz(a[i].val.U64);
+        q[i].metadata = 1;
       }
     }break;
 
     case CLZ : {
       for(int i = 0; i < tests->tests; i++){
-        q[i].U64 = __builtin_clz(a[i].U64);
+        q[i].val.U64 = __builtin_clz(a[i].val.U64);
+        q[i].metadata = 1;
       }
     }break;
 
     case ILS : {
       for(int i = 0; i < tests->tests; i++){
-        q[i].U64 = a[i].I64 < b[i].I64;
+        q[i].val.U64 = a[i].val.I64 < b[i].val.I64;
+        q[i].metadata = 1;
       }
     }break;
 
     case ULS : {
       for(int i = 0; i < tests->tests; i++){
-        q[i].U64 = a[i].U64 < b[i].U64;
+        q[i].val.U64 = a[i].val.U64 < b[i].val.U64;
+        q[i].metadata = 1;
       }
     }break;
 
     case ILSE : {
       for(int i = 0; i < tests->tests; i++){
-        q[i].U64 = a[i].I64 <= b[i].I64;
+        q[i].val.U64 = a[i].val.I64 <= b[i].val.I64;
+        q[i].metadata = 1;
       }
     }break;
 
     case ULSE : {
       for(int i = 0; i < tests->tests; i++){
-        q[i].U64 = a[i].U64 <= b[i].U64;
+        q[i].val.U64 = a[i].val.U64 <= b[i].val.U64;
+        q[i].metadata = 1;
       }
     }break;
 
     case IGT : {
       for(int i = 0; i < tests->tests; i++){
-        q[i].U64 = a[i].I64 > b[i].I64;
+        q[i].val.U64 = a[i].val.I64 > b[i].val.I64;
+        q[i].metadata = 1;
       }
     }break;
 
     case UGT : {
       for(int i = 0; i < tests->tests; i++){
-        q[i].U64 = a[i].U64 > b[i].U64;
+        q[i].val.U64 = a[i].val.U64 > b[i].val.U64;
+        q[i].metadata = 1;
       }
     }break;
 
     case IGTE : {
       for(int i = 0; i < tests->tests; i++){
-        q[i].U64 = a[i].I64 >= b[i].I64;
+        q[i].val.U64 = a[i].val.I64 >= b[i].val.I64;
+        q[i].metadata = 1;
       }
     }break;
 
     case UGTE : {
       for(int i = 0; i < tests->tests; i++){
-        q[i].U64 = a[i].U64 >= b[i].U64;
+        q[i].val.U64 = a[i].val.U64 >= b[i].val.U64;
+        q[i].metadata = 1;
       }
     }break;
   }
