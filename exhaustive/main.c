@@ -15,9 +15,9 @@ int main(){
   OPCODETABLE tab = makeOpcodeTable();
 
   p.ops[0] = newUnop (PCT , 4);
-  p.ops[1] = newBinop(ADD , 4, 5);
-  p.ops[2] = newBinop(ADD , 1, 4);
-  p.ops[3] = newBinop(IMUL, 4, 6);
+  p.ops[1] = newBinop(ADDI, 4, 5);
+  p.ops[2] = newBinop(ADDI, 1, 4);
+  p.ops[3] = newBinop(MULI, 4, 6);
   p.inct   = 4;
   p.exct   = 4;
   p.exs[0] = 0;

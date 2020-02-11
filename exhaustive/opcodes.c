@@ -55,53 +55,108 @@ uint64_t getDependencyMap(OPCODETABLE* table, PROGRAM* p){
 }
 
 
+typedef enum {
+  IS_UNOP   =  1,
+  IS_BINOP  =  2,
+  IS_TRINOP =  4,
+  IS_BIRET  =  8,
+  IS_ORDERED= 16
+}OPPROPFLAGS;
+
+void newOpcode(OPCODETABLE* table, int opcode, char* name, int cost, OPPROPFLAGS flags){
+  int wordix = opcode / 64;
+  int bitix  = opcode % 64;
+
+  table->cost[opcode] = cost;
+  table->isDefined[wordix] |= (1l << bitix);
+  table->isUnop   [wordix] |= (flags & IS_UNOP   )? (1l << bitix) : 0;
+  table->isBinop  [wordix] |= (flags & IS_BINOP  )? (1l << bitix) : 0;
+  table->isTrinop [wordix] |= (flags & IS_TRINOP )? (1l << bitix) : 0;
+  table->isOrdered[wordix] |= (flags & IS_ORDERED)? (1l << bitix) : 0;
+}
+
+
 /*
   Ideally, there would be different tables for different platforms, but that
   isn't much of a factor for this prototype.
 */
 OPCODETABLE makeOpcodeTable(){
   OPCODETABLE ret;
-  ret.isDefined[0] = 0b0000000000000000000000000011111111111111111111111111111111111110;
-  ret.isDefined[1] = 0;
-  ret.isDefined[2] = 0;
-  ret.isDefined[3] = 0;
-
-  ret.isUnop   [0] = 0b0000000000000000000000000011100000000000001110000100011000000000;
-  ret.isUnop   [1] = 0;
-  ret.isUnop   [2] = 0;
-  ret.isUnop   [3] = 0;
-
-  ret.isBinop  [0] = 0b0000000000000000000000000000011111111111110001111011100111100110;
-  ret.isBinop  [1] = 0;
-  ret.isBinop  [2] = 0;
-  ret.isBinop  [3] = 0;
-
-  ret.isTrinop [0] = 0b0000000000000000000000000000000000000000000000000000000000011000;
-  ret.isTrinop [1] = 0;
-  ret.isTrinop [2] = 0;
-  ret.isTrinop [3] = 0;
-
-  uint64_t cost_1 =  0b0000000000000000000000000011111111111111000111111111100000011110;
-  uint64_t cost_3 =  0b0000000000000000000000000000000000000000111000000000000001100000;
-  uint64_t cost_22=  0b0000000000000000000000000000000000000000000000000000000110000000;
   for(int i = 0; i < 256; i++){
-    if(i < 64){
-      if      (cost_1  & (1l << i)){
-        ret.cost[i] =  1;
-      }else if(cost_3  & (1l << i)){
-        ret.cost[i] =  3;
-      }else if(cost_22 & (1l << i)){
-        ret.cost[i] = 22;
-      }else{
-        ret.cost[i] = 0;
-      }
-    }else{
-      ret.cost[i] = 0;
-    }
-    ret.reqOpc[i] = 0;
+    ret.cost  [i] = 0;
+    ret.opname[i] = "";
   }
-  ret.reqOpc[IMOD] = IDIV;
-  ret.reqOpc[UMOD] = UDIV;
+  for(int i = 0; i < 4; i++){
+    ret.isDefined[i] = 0;
+    ret.isUnop   [i] = 0;
+    ret.isBinop  [i] = 0;
+    ret.isTrinop [i] = 0;
+    ret.isOrdered[i] = 0;
+  }
+
+  newOpcode(&ret, ADDI , "addi" ,  1, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, SUBI , "subi" ,  1, IS_BINOP);
+  newOpcode(&ret, MULI , "muli" ,  3, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, MULU , "mulu" ,  3, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, DIVI , "divi" , 22, IS_BINOP | IS_BIRET  );
+  newOpcode(&ret, DIVU , "divu" , 22, IS_BINOP | IS_BIRET  );
+  newOpcode(&ret, AND  , "and"  ,  1, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, OR   , "or"   ,  1, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, XOR  , "xor"  ,  1, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, NOT  , "not"  ,  1, IS_UNOP );
+  newOpcode(&ret, SHL  , "shl"  ,  1, IS_BINOP);
+  newOpcode(&ret, SHR  , "shr"  ,  1, IS_BINOP);
+  newOpcode(&ret, RTL  , "rtl"  ,  1, IS_BINOP);
+  newOpcode(&ret, RTR  , "rtr"  ,  1, IS_BINOP);
+  newOpcode(&ret, MAXI , "maxi" ,  3, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, MINI , "mini" ,  3, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, MAXU , "maxu" ,  3, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, MINU , "minu" ,  3, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, ILS  , "ils"  ,  2, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, ILSE , "ilse" ,  2, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, IGT  , "igt"  ,  2, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, IGTE , "igte" ,  2, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, EQ   , "eq"   ,  2, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, NEQ  , "neq"  ,  2, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, ULS  , "uls"  ,  2, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, ULSE , "ulse" ,  2, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, UGT  , "ugt"  ,  2, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, UGTE , "ugte" ,  2, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, NZ   , "nz"   ,  2, IS_UNOP);
+  newOpcode(&ret, PCT  , "pct"  ,  1, IS_UNOP);
+  newOpcode(&ret, CTZ  , "ctz"  ,  1, IS_UNOP);
+  newOpcode(&ret, CLZ  , "clz"  ,  1, IS_UNOP);
+  newOpcode(&ret, MTCH , "mtch" ,  2, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, SBST , "sbst" ,  2, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, SPST , "spst" ,  2, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, DSJT , "dsjt" ,  2, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, NCMP , "ncmp" ,  6, IS_BINOP | IS_ORDERED);
+  newOpcode(&ret, SXOR , "sxor" , 18, IS_UNOP);
+  newOpcode(&ret, SAND , "sand" , 18, IS_UNOP);
+  newOpcode(&ret, SOR  , "sor"  , 18, IS_UNOP);
+  newOpcode(&ret, SXNOR, "sxnor", 24, IS_UNOP);
+  newOpcode(&ret, SNAND, "snand", 24, IS_UNOP);
+  newOpcode(&ret, SNOR , "snor" , 24, IS_UNOP);
+  newOpcode(&ret, INC  , "inc"  ,  1, IS_UNOP);
+  newOpcode(&ret, DEC  , "dec"  ,  1, IS_UNOP);
+  newOpcode(&ret, ADDO , "addo" ,  2, IS_BINOP | IS_ORDERED | IS_BIRET);
+  newOpcode(&ret, SUBO , "subo" ,  2, IS_BINOP | IS_BIRET);
+  newOpcode(&ret, UMULO, "umulo",  4, IS_BINOP | IS_ORDERED | IS_BIRET);
+  newOpcode(&ret, IMULO, "imulo",  4, IS_BINOP | IS_ORDERED | IS_BIRET);
+  newOpcode(&ret, ADC  , "adc"  ,  1, IS_TRINOP);
+  newOpcode(&ret, SBB  , "sbb"  ,  1, IS_TRINOP);
+  newOpcode(&ret, NEG  , "neg"  ,  1, IS_UNOP);
+  newOpcode(&ret, ABS  , "abs"  ,  2, IS_UNOP);
+  newOpcode(&ret, LEA1 , "lea1" ,  2, IS_TRINOP);
+  newOpcode(&ret, LEA2 , "lea2" ,  2, IS_TRINOP);
+  newOpcode(&ret, LEA4 , "lea4" ,  2, IS_TRINOP);
+  newOpcode(&ret, LEA8 , "lea8" ,  2, IS_TRINOP);
+  newOpcode(&ret, LEA1S, "lea1s",  2, IS_TRINOP);
+  newOpcode(&ret, LEA2S, "lea2s",  2, IS_TRINOP);
+  newOpcode(&ret, LEA4S, "lea4s",  2, IS_TRINOP);
+  newOpcode(&ret, LEA8S, "lea8s",  2, IS_TRINOP);
+  newOpcode(&ret, CMOV , "cmov" ,  2, IS_TRINOP);
+
 
   return ret;
 }

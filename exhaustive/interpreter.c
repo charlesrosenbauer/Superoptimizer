@@ -9,7 +9,7 @@
 
 
 
-
+/*
 int step(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, int ix){
 
   REG *a, *b, *c, *q;
@@ -272,4 +272,4 @@ int step(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, int ix){
 
 
   return 0;
-}
+}*/
