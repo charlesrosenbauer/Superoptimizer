@@ -34,9 +34,9 @@ uint64_t getDependencyMap(OPCODETABLE* table, PROGRAM* p){
     }
 
     int a, b, c;
-    a = p->inct + (i - p->ops[i].a);
-    b = p->inct + (i - p->ops[i].b);
-    c = p->inct + (i - p->ops[i].c);
+    a = p->inct + (i - (p->ops[i].a / 2));
+    b = p->inct + (i - (p->ops[i].b / 2));
+    c = p->inct + (i - (p->ops[i].c / 2));
 
     if(unop){
       depmap[i+p->inct] = depmap[a];
@@ -184,4 +184,40 @@ OPCODE newTrinop(OPCODES op, int a, int b, int c){
   ret.b  = b;
   ret.c  = c;
   return ret;
+}
+
+
+
+int isUnop   (OPCODETABLE* tab, OPCODES op){
+  int wordix = op / 64;
+  int bitix  = op % 64;
+  return (tab->isUnop   [wordix] & (1l << bitix)) != 0;
+}
+
+
+int isBinop  (OPCODETABLE* tab, OPCODES op){
+  int wordix = op / 64;
+  int bitix  = op % 64;
+  return (tab->isBinop  [wordix] & (1l << bitix)) != 0;
+}
+
+
+int isTrinop (OPCODETABLE* tab, OPCODES op){
+  int wordix = op / 64;
+  int bitix  = op % 64;
+  return (tab->isTrinop [wordix] & (1l << bitix)) != 0;
+}
+
+
+int isBiret  (OPCODETABLE* tab, OPCODES op){
+  int wordix = op / 64;
+  int bitix  = op % 64;
+  return (tab->isBiret  [wordix] & (1l << bitix)) != 0;
+}
+
+
+int isOrdered(OPCODETABLE* tab, OPCODES op){
+  int wordix = op / 64;
+  int bitix  = op % 64;
+  return (tab->isOrdered[wordix] & (1l << bitix)) != 0;
 }

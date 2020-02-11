@@ -111,12 +111,15 @@ typedef struct{
 uint64_t getDependencyMap(OPCODETABLE*, PROGRAM*);
 
 OPCODETABLE makeOpcodeTable();
-
 OPCODE newUnop(OPCODES, int);
-
 OPCODE newBinop(OPCODES, int, int);
-
 OPCODE newTrinop(OPCODES, int, int, int);
+
+int isUnop   (OPCODETABLE*, OPCODES);
+int isBinop  (OPCODETABLE*, OPCODES);
+int isTrinop (OPCODETABLE*, OPCODES);
+int isBiret  (OPCODETABLE*, OPCODES);
+int isOrdered(OPCODETABLE*, OPCODES);
 
 
 

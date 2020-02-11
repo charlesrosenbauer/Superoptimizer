@@ -12,18 +12,17 @@ typedef union{
 
 
 typedef struct{
-  VAL      val;
-  uint64_t sidedata;
-  uint8_t  metadata;
-}REG;
+  VAL       *aRets, *bRets;
+  uint64_t  *passes;
+}TESTROW;
 
 
 
 
 typedef struct{
-  REG *data;
+  TESTROW    tests[40];
 
-  int tests, depth;
+  int depth, size, inct, exct;
 }TESTCASE;
 
 

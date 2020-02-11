@@ -14,10 +14,10 @@ int main(){
   PROGRAM p;
   OPCODETABLE tab = makeOpcodeTable();
 
-  p.ops[0] = newUnop (PCT , 4);
-  p.ops[1] = newBinop(ADDI, 4, 5);
-  p.ops[2] = newBinop(ADDI, 1, 4);
-  p.ops[3] = newBinop(MULI, 4, 6);
+  p.ops[0] = newUnop (PCT ,  8);
+  p.ops[1] = newBinop(ADDI,  8, 10);
+  p.ops[2] = newBinop(ADDI,  2,  8);
+  p.ops[3] = newBinop(MULI,  8, 12);
   p.inct   = 4;
   p.exct   = 4;
   p.exs[0] = 0;
