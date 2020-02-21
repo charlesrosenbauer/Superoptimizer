@@ -9,6 +9,32 @@
 
 
 
+int nextOpcode(OPCODETABLE* tab, PROGRAM* p, int opix){
+  OPCODE op = p->ops[opix];
+  if(op.op > tab->maxOpIx){
+    op.op = tab->minOpIx;
+    int ok = 0;
+    if      (isUnop  (tab, op.op)){
+      // pick new a
+    }else if(isBinop (tab, op.op)){
+      // pick new a & b
+    }else if(isTrinop(tab, op.op)){
+      // pick new a & b & c
+    }
+    if(ok){
+      p->ops[opix] = op;
+      return 1;
+    }
+  }else{
+    // Change this to take into account whether or not the opcode is defined.
+    op.op++;
+  }
+
+  return 0;
+}
+
+
+
 
 
 /*
@@ -44,12 +70,56 @@
     a very powerful optimization, as it not only filters out inefficient
     optimization candidates, but also filters out optimization candidates that
     simply cannot implement the specific optimization target.
-  
+
 
 */
-int superoptimize(PROGRAM* target, PROGRAM* candidates, int optct, TESTCASE* tests, int sizeLimit){
+int superoptimize(OPCODETABLE* tab, PROGRAM* target, PROGRAM* candidates, int optct, TESTCASE* tests, int sizeLimit){
 
+  /*
+    sigpars    = getSigPars(target);
+    stacklimit = sigpars / 2;
+    if(stacklimit > sizeLimit) return 0;
+  */
 
+  PROGRAM opt;
 
-  return 0;
+  int cont = 1;
+  int stackhead   = 0;
+  int stacklimit  = 1;   // Eventually start this at (sigpars / 2)
+  int candidatect = 0;
+  while(cont){
+    int newOp = nextOpcode(tab, &opt, stackhead);
+    if(newOp){
+      stackhead--;
+    }else{
+      int pass = 0;
+      // pick opcode
+      // pass = run pretest opcode filters
+      if(pass){
+        // run tests
+        // pass = run posttest opcode filters
+        if(pass){
+          stackhead++;
+        }
+      }
+
+      if(stackhead == sizeLimit){
+        int pass = 0;
+        // pass = test full optimization
+        if(pass){
+          int valid = 1;
+          // valid = verify optimization
+          if(valid){
+            candidates[candidatect] = opt;
+            candidatect++;
+            if(candidatect == optct){
+              return candidatect;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return candidatect;
 }

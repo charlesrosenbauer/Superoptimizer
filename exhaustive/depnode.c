@@ -9,9 +9,27 @@ inline int getMinSize(int relevantParct){
   return relevantParct / 2;
 }
 
+/*
+  RULES:
 
+  * 1-3 inputs per node
+
+  * first operation must use all inputs
+
+  * each additional operation must depend on the previous opcode
+
+  * final result must be an output
+
+  * if only 1 input, it must come from an internal result or a parameter
+
+  * all outputs of all nodes must be used
+
+*/
 void nextDepList(DEPLIST* deplist, uint64_t depmap, int opct){
 
+  for(int i = 0; i < deplist->nodect; i++){
+    
+  }
 }
 
 

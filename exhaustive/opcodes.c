@@ -73,6 +73,13 @@ void newOpcode(OPCODETABLE* table, int opcode, char* name, int cost, OPPROPFLAGS
   table->isBinop  [wordix] |= (flags & IS_BINOP  )? (1l << bitix) : 0;
   table->isTrinop [wordix] |= (flags & IS_TRINOP )? (1l << bitix) : 0;
   table->isOrdered[wordix] |= (flags & IS_ORDERED)? (1l << bitix) : 0;
+
+  if(opcode > table->maxOpIx){
+    table->maxOpIx = opcode;
+  }
+  if(opcode < table->minOpIx){
+    table->minOpIx = opcode;
+  }
 }
 
 
@@ -82,6 +89,9 @@ void newOpcode(OPCODETABLE* table, int opcode, char* name, int cost, OPPROPFLAGS
 */
 OPCODETABLE makeOpcodeTable(){
   OPCODETABLE ret;
+  ret.maxOpIx =   0;
+  ret.minOpIx = 255;
+
   for(int i = 0; i < 256; i++){
     ret.cost  [i] = 0;
     ret.opname[i] = "";

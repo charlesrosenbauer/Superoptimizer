@@ -87,6 +87,9 @@ typedef struct{
 
   uint8_t    cost   [256];
   char*      opname [256];
+
+  uint8_t    maxOpIx;
+  uint8_t    minOpIx;
 }OPCODETABLE;
 
 
