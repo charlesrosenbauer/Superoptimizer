@@ -66,15 +66,21 @@ void step(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, int ix){
 
     case MULI : {
       for(int i = 0; i < testct; i++){
-        ret->aRets[i].I64 = a[i].I64 * b[i].I64;
-        ret->bRets[i].I64 = 0;
+        __int128 x = a[i].U64;
+        __int128 y = b[i].U64;
+        x *= y;
+        ret->aRets[i].U64 = x >> 64;
+        ret->bRets[i].U64 = x;
       }
     }break;
 
     case MULU : {
       for(int i = 0; i < testct; i++){
-        ret->aRets[i].U64 = a[i].U64 * b[i].U64;
-        ret->bRets[i].U64 = 0;
+        unsigned __int128 x = a[i].U64;
+        unsigned __int128 y = b[i].U64;
+        x *= y;
+        ret->aRets[i].U64 = x >> 64;
+        ret->bRets[i].U64 = x;
       }
     }break;
 
