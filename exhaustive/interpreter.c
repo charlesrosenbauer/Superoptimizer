@@ -73,10 +73,13 @@ uint64_t snor(uint64_t x){
 
 
 
-void getParRows(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, int ix, VAL** a, VAL** b, VAL** c, TESTROW** ret){
+void getParRows(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, int ix, VAL** a, VAL** b, VAL** c, uint64_t** pa, uint64_t** pb, uint64_t** pc, TESTROW** ret){
   *a   = NULL;
   *b   = NULL;
   *c   = NULL;
+  *pa  = NULL;
+  *pb  = NULL;
+  *pc  = NULL;
   *ret = NULL;
   int opcode = p->ops[ix].op;
   int aix = p->ops[ix].a;
@@ -85,33 +88,50 @@ void getParRows(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, int ix, VAL** a
   int ares= aix % 2;
   int bres= bix % 2;
   int cres= cix % 2;
-  aix = 4 + (ix - (aix / 2));
-  bix = 4 + (ix - (bix / 2));
-  cix = 4 + (ix - (cix / 2));
+  aix = 8 + (ix - (aix / 2));
+  bix = 8 + (ix - (bix / 2));
+  cix = 8 + (ix - (cix / 2));
 
   if(      isUnop  (table, opcode)){
-    *a = (ares)? (tests->tests[aix].aRets) : (tests->tests[aix].bRets);
+    *a  = (ares)? (tests->tests[aix].aRets) : (tests->tests[aix].bRets);
+    *pa = tests->tests[aix].passes;
   }else if(isBinop (table, opcode)){
-    *a = (ares)? (tests->tests[aix].aRets) : (tests->tests[aix].bRets);
-    *b = (bres)? (tests->tests[bix].aRets) : (tests->tests[bix].bRets);
+    *a  = (ares)? (tests->tests[aix].aRets) : (tests->tests[aix].bRets);
+    *b  = (bres)? (tests->tests[bix].aRets) : (tests->tests[bix].bRets);
+    *pa = tests->tests[aix].passes;
+    *pb = tests->tests[bix].passes;
   }else if(isTrinop(table, opcode)){
-    *a = (ares)? (tests->tests[aix].aRets) : (tests->tests[aix].bRets);
-    *b = (bres)? (tests->tests[bix].aRets) : (tests->tests[bix].bRets);
-    *c = (cres)? (tests->tests[cix].aRets) : (tests->tests[cix].bRets);
+    *a  = (ares)? (tests->tests[aix].aRets) : (tests->tests[aix].bRets);
+    *b  = (bres)? (tests->tests[bix].aRets) : (tests->tests[bix].bRets);
+    *c  = (cres)? (tests->tests[cix].aRets) : (tests->tests[cix].bRets);
+    *pa = tests->tests[aix].passes;
+    *pb = tests->tests[bix].passes;
+    *pc = tests->tests[cix].passes;
   }
 
-  *ret = &tests->tests[ix + 4];
+  *ret = &tests->tests[ix + 8];
 }
 
 
 
 void step(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, int ix){
 
-  VAL *a, *b, *c;
-  TESTROW* ret;
+  VAL      *a, *b, *c;
+  uint64_t *pa, *pb, *pc;
+  TESTROW  *ret;
   int opcode = p->ops[ix].op;
-  getParRows(table, tests, p, ix, &a, &b, &c, &ret);
+  getParRows(table, tests, p, ix, &a, &b, &c, &pa, &pb, &pc, &ret);
   int testct = tests->size;
+  int passct = (testct % 64)? (testct / 64) + 1 : (testct / 64);
+
+  if      (isUnop  (table, opcode)){
+    for(int i = 0; i < passct; i++) ret->passes[i] = pa[i];
+  }else if(isBinop (table, opcode)){
+    for(int i = 0; i < passct; i++) ret->passes[i] = pa[i] & pb[i];
+  }else if(isTrinop(table, opcode)){
+    for(int i = 0; i < passct; i++) ret->passes[i] = pa[i] & pb[i] & pc[i];
+  }
+
 
   switch(opcode){
     case ADDI : {
@@ -495,75 +515,74 @@ void step(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, int ix){
         ret->aRets[i].U64 = a[i].U64 + (b[i].U64 * 1) + c[i].U64;
         ret->bRets[i].U64 = 0;
       }
-    }
+    }break;
 
     case LEA2 : {
       for(int i = 0; i < testct; i++){
         ret->aRets[i].U64 = a[i].U64 + (b[i].U64 * 2) + c[i].U64;
         ret->bRets[i].U64 = 0;
       }
-    }
+    }break;
 
     case LEA4 : {
       for(int i = 0; i < testct; i++){
         ret->aRets[i].U64 = a[i].U64 + (b[i].U64 * 4) + c[i].U64;
         ret->bRets[i].U64 = 0;
       }
-    }
+    }break;
 
     case LEA8 : {
       for(int i = 0; i < testct; i++){
         ret->aRets[i].U64 = a[i].U64 + (b[i].U64 * 8) + c[i].U64;
         ret->bRets[i].U64 = 0;
       }
-    }
+    }break;
 
     case LEA1S : {
       for(int i = 0; i < testct; i++){
         ret->aRets[i].U64 = a[i].U64 + (b[i].U64 * 1) - c[i].U64;
         ret->bRets[i].U64 = 0;
       }
-    }
+    }break;
 
     case LEA2S : {
       for(int i = 0; i < testct; i++){
         ret->aRets[i].U64 = a[i].U64 + (b[i].U64 * 2) - c[i].U64;
         ret->bRets[i].U64 = 0;
       }
-    }
+    }break;
 
     case LEA4S : {
       for(int i = 0; i < testct; i++){
         ret->aRets[i].U64 = a[i].U64 + (b[i].U64 * 4) - c[i].U64;
         ret->bRets[i].U64 = 0;
       }
-    }
+    }break;
 
     case LEA8S : {
       for(int i = 0; i < testct; i++){
         ret->aRets[i].U64 = a[i].U64 + (b[i].U64 * 8) - c[i].U64;
         ret->bRets[i].U64 = 0;
       }
-    }
+    }break;
 
     case CMOV : {
       for(int i = 0; i < testct; i++){
         ret->aRets[i].U64 = (a[i].U64)? b[i].U64 : c[i].U64;
         ret->bRets[i].U64 = 0;
       }
-    }
+    }break;
   }
-
-
 }
 
 
 int  test(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, TESTROW* constraints, int ix){
 
-  VAL *a, *b, *c;
+  VAL      *a, *b, *c;
+  uint64_t *pa, *pb, *pc;
   TESTROW* ret;
   int opcode = p->ops[ix].op;
-  getParRows(table, tests, p, ix, &a, &b, &c, &ret);
+  getParRows(table, tests, p, ix, &a, &b, &c, &pa, &pb, &pc, &ret);
 
   switch(opcode){
 
