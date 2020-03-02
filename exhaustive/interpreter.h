@@ -27,7 +27,7 @@ typedef struct{
 
 
 
-
+void step(OPCODETABLE*, TESTCASE*, PROGRAM*, int);
 
 
 

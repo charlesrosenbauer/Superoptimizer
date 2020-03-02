@@ -73,13 +73,14 @@ uint64_t snor(uint64_t x){
 
 
 
-void getParRows(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, int ix, VAL** a, VAL** b, VAL** c, uint64_t** pa, uint64_t** pb, uint64_t** pc, TESTROW** ret){
+void getParRows(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, int ix, VAL** a, VAL** b, VAL** c, uint64_t** pa, uint64_t** pb, uint64_t** pc, uint64_t** pr, TESTROW** ret){
   *a   = NULL;
   *b   = NULL;
   *c   = NULL;
   *pa  = NULL;
   *pb  = NULL;
   *pc  = NULL;
+  *pr  = NULL;
   *ret = NULL;
   int opcode = p->ops[ix].op;
   int aix = p->ops[ix].a;
@@ -110,6 +111,7 @@ void getParRows(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, int ix, VAL** a
   }
 
   *ret = &tests->tests[ix + 8];
+  *pr  =  tests->tests[ix + 8].passes;
 }
 
 
@@ -117,19 +119,28 @@ void getParRows(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, int ix, VAL** a
 void step(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, int ix){
 
   VAL      *a, *b, *c;
-  uint64_t *pa, *pb, *pc;
+  uint64_t *pa, *pb, *pc, *pr;
   TESTROW  *ret;
   int opcode = p->ops[ix].op;
-  getParRows(table, tests, p, ix, &a, &b, &c, &pa, &pb, &pc, &ret);
+  getParRows(table, tests, p, ix, &a, &b, &c, &pa, &pb, &pc, &pr, &ret);
   int testct = tests->size;
   int passct = (testct % 64)? (testct / 64) + 1 : (testct / 64);
 
   if      (isUnop  (table, opcode)){
-    for(int i = 0; i < passct; i++) ret->passes[i] = pa[i];
+    for(int i = 0; i < passct; i++){
+      ret->passes[i] = pa[i];
+      pr[i] = ret->passes[i];
+    }
   }else if(isBinop (table, opcode)){
-    for(int i = 0; i < passct; i++) ret->passes[i] = pa[i] & pb[i];
+    for(int i = 0; i < passct; i++){
+      ret->passes[i] = pa[i] & pb[i];
+      pr[i] = ret->passes[i];
+    }
   }else if(isTrinop(table, opcode)){
-    for(int i = 0; i < passct; i++) ret->passes[i] = pa[i] & pb[i] & pc[i];
+    for(int i = 0; i < passct; i++){
+      ret->passes[i] = pa[i] & pb[i] & pc[i];
+      pr[i] = ret->passes[i];
+    }
   }
 
 
@@ -169,18 +180,28 @@ void step(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, int ix){
     }break;
 
     case DIVI : {
-      // Cases need to be added to check for divide-by-zero errors
       for(int i = 0; i < testct; i++){
-        ret->aRets[i].I64 = a[i].I64 / b[i].I64;
-        ret->bRets[i].I64 = a[i].I64 % b[i].I64;
+        if(b[i].I64 != 0){
+          ret->aRets[i].I64 = a[i].I64 / b[i].I64;
+          ret->bRets[i].I64 = a[i].I64 % b[i].I64;
+        }else{
+          ret->aRets[i].I64 = 0;
+          ret->bRets[i].I64 = 0;
+          pr[i / 64] &= ~(1l << (i % 64));
+        }
       }
     }break;
 
     case DIVU : {
-      // Cases need to be added to check for divide-by-zero errors
       for(int i = 0; i < testct; i++){
-        ret->aRets[i].U64 = a[i].U64 / b[i].U64;
-        ret->bRets[i].U64 = a[i].U64 % b[i].U64;
+        if(b[i].I64 != 0){
+          ret->aRets[i].I64 = a[i].U64 / b[i].U64;
+          ret->bRets[i].I64 = a[i].U64 % b[i].U64;
+        }else{
+          ret->aRets[i].U64 = 0;
+          ret->bRets[i].U64 = 0;
+          pr[i / 64] &= ~(1l << (i % 64));
+        }
       }
     }break;
 
@@ -573,20 +594,4 @@ void step(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, int ix){
       }
     }break;
   }
-}
-
-
-int  test(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, TESTROW* constraints, int ix){
-
-  VAL      *a, *b, *c;
-  uint64_t *pa, *pb, *pc;
-  TESTROW* ret;
-  int opcode = p->ops[ix].op;
-  getParRows(table, tests, p, ix, &a, &b, &c, &pa, &pb, &pc, &ret);
-
-  switch(opcode){
-
-  }
-
-  return 1;
 }
