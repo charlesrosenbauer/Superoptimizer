@@ -8,7 +8,14 @@
 
 
 
+typedef struct{
+  uint64_t bits[4];
+}SET256;
 
+
+
+int  nextSet64 (uint64_t, int);
+int  nextSet256(SET256,   int);
 
 
 void printU8 (uint8_t);
