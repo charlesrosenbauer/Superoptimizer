@@ -9,26 +9,68 @@
 
 
 
-int nextOpcode(OPCODETABLE* tab, PROGRAM* p, int opix){
-  OPCODE op = p->ops[opix];
-  if(op.op > tab->maxOpIx){
-    op.op = tab->minOpIx;
-    int ok = 0;
-    if      (isUnop  (tab, op.op)){
-      // pick new a
-    }else if(isBinop (tab, op.op)){
-      // pick new a & b
-    }else if(isTrinop(tab, op.op)){
-      // pick new a & b & c
-    }
-    if(ok){
-      p->ops[opix] = op;
+int selectOpType(OPCODETABLE* tab, PROGRAM* p, PROGRAMDATA* pd, int opix){
+  switch(pd->optyps[opix]){
+    //OP_1_1, OP_2_1, OP_2_2, OP_3_1, OP_INPUT
+    case OP_1_1 : {
+      pd->optyps[opix] = OP_2_1;
+    }break;
+
+    case OP_2_1 : {
+      pd->optyps[opix] = OP_2_2;
+    }break;
+
+    case OP_2_2 : {
+      pd->optyps[opix] = OP_3_1;
+    }break;
+
+    case OP_3_1 : {
+      pd->optyps[opix] = OP_1_1;
       return 1;
-    }
-  }else{
-    // Change this to take into account whether or not the opcode is defined.
-    op.op++;
+    }break;
+
+    default: return 1;
   }
+
+  return 0;
+}
+
+
+
+int selectDeps(OPCODETABLE* tab, PROGRAM* p, PROGRAMDATA* pd, int opix){
+  switch(pd->optyps[opix]){
+    case OP_1_1 : {
+      // Either single-use or multi-use
+    }break;
+
+    case OP_2_1 : {
+      // Either single-use or multi-use
+    }break;
+
+    case OP_2_2 : {
+      // A: Either single-use or multi-use
+      // B: Either single-use, multi-use, or unused. Unused constrains the
+      //      opcodes that can be used. Mostly only divmod and multiply can be
+      //      used in that case.
+    }break;
+
+    case OP_3_1 : {
+      // Either single-use or multi-use
+      return 1;
+    }break;
+
+    case OP_INPUT : {
+      // Either single-use or multi-use
+    }break;
+  }
+
+  return 0;
+}
+
+
+
+int selectOpcode(OPCODETABLE* tab, PROGRAM* p, PROGRAMDATA* pd, int opix){
+
 
   return 0;
 }
@@ -44,11 +86,12 @@ int nextOpcode(OPCODETABLE* tab, PROGRAM* p, int opix){
     It will start at the minimum determined size for the program, and begin to
     grow from there.
 
-  2. The program will be split into several subprograms with a variety of rules
-    for mapping dependencies between them. If the dependency map does not match
-    the original program well, it will be rejected on the grounds that dependency
-    analysis has shown it to be incapable of generating a correct program. This
-    will eliminate large classes of programs.
+  2. Dependencies between opcodes will be mapped, and the DAG will be required
+    to remain canonical. Outputs of opcodes will be labeled as UNUSED,
+    SINGLE_USE, or MULTI_USE. This places constraints on future dependencies,
+    which will cause backtracking. Additional dependency tracking can be done
+    to constrain this even further, such as checking that the dependency map of
+    each instruction is a subset of the dependency map of a final output.
 
   3. Short subsequences of instructions can be analyzed for efficiency. If there
     is a sequence of 2 or 3 instructions that is known to be able to be equivalent
@@ -88,7 +131,7 @@ int superoptimize(OPCODETABLE* tab, PROGRAM* target, PROGRAM* candidates, int op
   int stacklimit  = 1;   // Eventually start this at (sigpars / 2)
   int candidatect = 0;
   while(cont){
-    int newOp = nextOpcode(tab, &opt, stackhead);
+    int newOp = 0;// nextOpcode(tab, &opt, stackhead);
     if(newOp){
       stackhead--;
     }else{
