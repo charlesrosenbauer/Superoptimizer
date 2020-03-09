@@ -38,13 +38,18 @@ int selectOpType(OPCODETABLE* tab, PROGRAM* p, PROGRAMDATA* pd, int opix){
 
 
 int selectDeps(OPCODETABLE* tab, PROGRAM* p, PROGRAMDATA* pd, int opix){
+  int ix = opix * 2;
   switch(pd->optyps[opix]){
     case OP_1_1 : {
       // Either single-use or multi-use
+      pd->retyps[ix] = ((pd->retyps[ix] - 1) ^ 1) + 1;
+      return pd->retyps[ix] == 1;
     }break;
 
     case OP_2_1 : {
       // Either single-use or multi-use
+      pd->retyps[ix] = ((pd->retyps[ix] - 1) ^ 1) + 1;
+      return pd->retyps[ix] == 1;
     }break;
 
     case OP_2_2 : {
@@ -52,15 +57,21 @@ int selectDeps(OPCODETABLE* tab, PROGRAM* p, PROGRAMDATA* pd, int opix){
       // B: Either single-use, multi-use, or unused. Unused constrains the
       //      opcodes that can be used. Mostly only divmod and multiply can be
       //      used in that case.
+      pd->retyps[ix+1] = (pd->retyps[ix+1] + 1) % 3;
+      pd->retyps[ix] = ((pd->retyps[ix] - (pd->retyps[ix+1] == UNUSED)) ^ 1) + 1;
+      return (pd->retyps[ix+1] == UNUSED) & (pd->retyps[ix] == SINGLE_USE);
     }break;
 
     case OP_3_1 : {
       // Either single-use or multi-use
-      return 1;
+      pd->retyps[ix] = ((pd->retyps[ix] - 1) ^ 1) + 1;
+      return pd->retyps[ix] == 1;
     }break;
 
     case OP_INPUT : {
       // Either single-use or multi-use
+      pd->retyps[ix] = ((pd->retyps[ix] - 1) ^ 1) + 1;
+      return pd->retyps[ix] == 1;
     }break;
   }
 
@@ -70,7 +81,7 @@ int selectDeps(OPCODETABLE* tab, PROGRAM* p, PROGRAMDATA* pd, int opix){
 
 
 int selectOpcode(OPCODETABLE* tab, PROGRAM* p, PROGRAMDATA* pd, int opix){
-
+  
 
   return 0;
 }

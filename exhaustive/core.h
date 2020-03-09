@@ -8,12 +8,12 @@
 
 
 typedef enum{
-  UNUSED, SINGLE_USE, MULTI_USE
+  UNUSED = 0, SINGLE_USE = 1, MULTI_USE = 2
 }RETTYPE;
 
 
 typedef enum{
-  OP_1_1, OP_2_1, OP_2_2, OP_3_1, OP_INPUT
+  OP_1_1 = 0, OP_2_1 = 1, OP_2_2 = 2, OP_3_1 = 3, OP_INPUT = 4
 }OPTYPE;
 
 
