@@ -85,28 +85,28 @@ void getParRows(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, int ix, VAL** a
   *pr  = NULL;
   *ret = NULL;
   int opcode = p->ops[ix].op;
-  int aix = p->ops[ix].a;
-  int bix = p->ops[ix].b;
-  int cix = p->ops[ix].c;
-  int ares= aix % 2;
-  int bres= bix % 2;
-  int cres= cix % 2;
-  aix = 8 + (ix - (aix / 2));
-  bix = 8 + (ix - (bix / 2));
-  cix = 8 + (ix - (cix / 2));
+  int aix    = p->ops[ix].a;
+  int bix    = p->ops[ix].b;
+  int cix    = p->ops[ix].c;
+  int ares   = aix % 2;
+  int bres   = bix % 2;
+  int cres   = cix % 2;
+  aix = (aix / 2);
+  bix = (bix / 2);
+  cix = (cix / 2);
 
   if(      isUnop  (table, opcode)){
-    *a  = (ares)? (tests->tests[aix].aRets) : (tests->tests[aix].bRets);
+    *a  = (!ares)? (tests->tests[aix].aRets) : (tests->tests[aix].bRets);
     *pa = tests->tests[aix].passes;
   }else if(isBinop (table, opcode)){
-    *a  = (ares)? (tests->tests[aix].aRets) : (tests->tests[aix].bRets);
-    *b  = (bres)? (tests->tests[bix].aRets) : (tests->tests[bix].bRets);
+    *a  = (!ares)? (tests->tests[aix].aRets) : (tests->tests[aix].bRets);
+    *b  = (!bres)? (tests->tests[bix].aRets) : (tests->tests[bix].bRets);
     *pa = tests->tests[aix].passes;
     *pb = tests->tests[bix].passes;
   }else if(isTrinop(table, opcode)){
-    *a  = (ares)? (tests->tests[aix].aRets) : (tests->tests[aix].bRets);
-    *b  = (bres)? (tests->tests[bix].aRets) : (tests->tests[bix].bRets);
-    *c  = (cres)? (tests->tests[cix].aRets) : (tests->tests[cix].bRets);
+    *a  = (!ares)? (tests->tests[aix].aRets) : (tests->tests[aix].bRets);
+    *b  = (!bres)? (tests->tests[bix].aRets) : (tests->tests[bix].bRets);
+    *c  = (!cres)? (tests->tests[cix].aRets) : (tests->tests[cix].bRets);
     *pa = tests->tests[aix].passes;
     *pb = tests->tests[bix].passes;
     *pc = tests->tests[cix].passes;
@@ -166,8 +166,8 @@ void step(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, int ix){
         __int128 x = a[i].I64;
         __int128 y = b[i].I64;
         x *= y;
-        ret->aRets[i].I64 = x >> 64;
-        ret->bRets[i].I64 = x;
+        ret->aRets[i].I64 = x;
+        ret->bRets[i].I64 = x >> 64;
       }
     }break;
 
@@ -176,8 +176,8 @@ void step(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, int ix){
         unsigned __int128 x = a[i].U64;
         unsigned __int128 y = b[i].U64;
         x *= y;
-        ret->aRets[i].U64 = x >> 64;
-        ret->bRets[i].U64 = x;
+        ret->aRets[i].U64 = x;
+        ret->bRets[i].U64 = x >> 64;
       }
     }break;
 
@@ -603,6 +603,7 @@ void step(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, int ix){
 
 TESTCASE makeTests(OPCODETABLE* tab, PROGRAM* p, int testct){
   TESTCASE ret;
+  ret.size = testct;
   int passct = (testct % 64)? ((testct / 64) + 1) : (testct / 64);
   for(int i = 0; i < 48; i++){
     ret.tests[i].aRets  = malloc(sizeof(VAL) * testct);
@@ -621,12 +622,12 @@ TESTCASE makeTests(OPCODETABLE* tab, PROGRAM* p, int testct){
   }
 
   for(int i = 0; i < p->exct; i++){
-    if(p->exs[i] & 1){
+    if(!(p->exs[i] & 1)){
       for(int j = 0; j < testct; j++)
-        ret.tests[i+40].aRets[j] = ret.tests[p->exs[i]].aRets[j];
+        ret.tests[i+40].aRets[j] = ret.tests[p->exs[i]/2].aRets[j];
     }else{
       for(int j = 0; j < testct; j++)
-        ret.tests[i+40].aRets[j] = ret.tests[p->exs[i]].bRets[j];
+        ret.tests[i+40].aRets[j] = ret.tests[p->exs[i]/2].bRets[j];
     }
   }
 
