@@ -20,7 +20,7 @@ typedef struct{
 
 
 typedef struct{
-  TESTROW    tests[40];
+  TESTROW    tests[48];
 
   int depth, size, inct, exct;
 }TESTCASE;
@@ -28,7 +28,7 @@ typedef struct{
 
 
 void step(OPCODETABLE*, TESTCASE*, PROGRAM*, int);
-
+TESTCASE makeTests(OPCODETABLE*, PROGRAM*, int);
 
 
 

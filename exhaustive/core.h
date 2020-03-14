@@ -3,6 +3,8 @@
 
 
 #include "stdint.h"
+#include "opcodes.h"
+#include "interpreter.h"
 
 
 
@@ -27,7 +29,7 @@ typedef struct{
 
 
 
-
+int superoptimize(OPCODETABLE*, PROGRAM*, PROGRAM*, int, TESTCASE*, int);
 
 
 

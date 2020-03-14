@@ -24,7 +24,7 @@ void printU32(uint32_t);
 void printU64(uint64_t);
 
 
-
+uint64_t rng();
 
 
 

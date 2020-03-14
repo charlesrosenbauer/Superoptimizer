@@ -2,6 +2,8 @@
 #include "opcodes.h"
 #include "stdint.h"
 #include "stdlib.h"
+#include "util.h"
+#include "stdio.h"
 
 
 
@@ -594,4 +596,39 @@ void step(OPCODETABLE* table, TESTCASE* tests, PROGRAM* p, int ix){
       }
     }break;
   }
+}
+
+
+
+
+TESTCASE makeTests(OPCODETABLE* tab, PROGRAM* p, int testct){
+  TESTCASE ret;
+  int passct = (testct % 64)? ((testct / 64) + 1) : (testct / 64);
+  for(int i = 0; i < 48; i++){
+    ret.tests[i].aRets  = malloc(sizeof(VAL) * testct);
+    ret.tests[i].bRets  = malloc(sizeof(VAL) * testct);
+    ret.tests[i].passes = malloc(sizeof(uint64_t) * passct);
+  }
+
+  for(int i = 0; i < p->inct; i++){
+    for(int j = 0; j < testct; j++) ret.tests[i].aRets [j].U64 = rng();
+    for(int j = 0; j < passct; j++) ret.tests[i].passes[j] = 0xffffffffffffffff;
+  }
+
+  for(int i = 0; i < p->size; i++){
+    printf("%i\n", i);
+    step(tab, &ret, p, i);
+  }
+
+  for(int i = 0; i < p->exct; i++){
+    if(p->exs[i] & 1){
+      for(int j = 0; j < testct; j++)
+        ret.tests[i+40].aRets[j] = ret.tests[p->exs[i]].aRets[j];
+    }else{
+      for(int j = 0; j < testct; j++)
+        ret.tests[i+40].aRets[j] = ret.tests[p->exs[i]].bRets[j];
+    }
+  }
+
+  return ret;
 }

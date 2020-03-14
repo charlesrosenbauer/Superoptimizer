@@ -2,6 +2,7 @@
 #include "stdio.h"
 #include "opcodes.h"
 #include "util.h"
+#include "core.h"
 
 
 
@@ -28,5 +29,10 @@ int main(){
 
   uint64_t depmap = getDependencyMap(&tab, &p);
   printU64(depmap);
+
+  PROGRAM opts[16];
+  TESTCASE tests = makeTests(&tab, &p, 256);
+
+  //superoptimize(&tab, &p, opts, 16, &tests, 256);
 
 }
